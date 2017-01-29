@@ -1,8 +1,38 @@
-/* Nama File : main.c */
-
 #include "Base.c"
+#include <termios.h>
+#include <stdio.h>
+#include <curses.h>
+#include <linux/input.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-int main() {
+struct termios stdin_orig;  // Structure to save parameters
+
+void term_reset() {
+        tcsetattr(STDIN_FILENO,TCSANOW,&stdin_orig);
+        tcsetattr(STDIN_FILENO,TCSAFLUSH,&stdin_orig);
+}
+
+void term_nonblocking() {
+        struct termios newt;
+        tcgetattr(STDIN_FILENO, &stdin_orig);
+        fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK); // non-blocking
+        newt = stdin_orig;
+        newt.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+        atexit(term_reset);
+}
+
+
+
+
+int main(int argc, char **argv) {
+	
+	term_nonblocking();
+	
     // Open the file for reading and writing
     fbfd = open("/dev/fb0", O_RDWR);
     if (fbfd == -1) {
@@ -39,24 +69,29 @@ int main() {
         exit(4);
     }
     printf("The framebuffer device was mapped to memory successfully.\n");
-
-    // Koordinat pixel
-    int x = 450;
-    int y = 100;
-    int height = 200;
-    int width = 30;
-    int i;
-
-    /* Membuat pergerakan tulian */
-    system("setterm -cursor off");
-    printBackground();
-    printBackground();	
-    for(i=0; i<1000; i++) {
-        printMatrix(x,1000-2*i);
-        printBackground();
-    }
-    system("setterm -cursor on");
-
+    
+    //Tembak akan dijadikan thread yang berbada
+    int key = 0;
+    int shootActive = 0;
+    int shootIdx[2];
+    for (int i = 0; i <1266; i++) {
+		printBackground();
+		printRectangle(75,100,i,668);
+		
+		key = getchar();
+		if (key > 0) {
+			shootIdx[0] = i;
+			shootIdx[1] = 578;
+			shoot(i,578);
+			shootActive = 1;
+			key = 0;
+		}
+		if (shootActive == 1) {
+			shootIdx[1]--;
+			shoot(shootIdx[0],shootIdx[1]);
+		}
+		
+	}
     munmap(fbp, screensize);
     close(fbfd);
     return 0;

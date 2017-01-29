@@ -139,3 +139,29 @@ void printBackground() {
         }
     }
 }
+
+void shoot(int x, int y) {
+	long int location = 0;
+    int i,j;
+    for (j = y; j < y+30; j++) {
+        for (i = x; i < x+30; i++) {
+            if(isValid(i,j)) {
+                location = (i+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+                            (j+vinfo.yoffset) * finfo.line_length;
+
+                if (vinfo.bits_per_pixel == 32) {
+                    *(fbp + location) = 100;        // Some blue
+                    *(fbp + location + 1) = 15+(i-100)/2;     // A little green
+                    *(fbp + location + 2) = 200-(j-100)/5;    // A lot of red
+                    *(fbp + location + 3) = 0;      // No transparency
+                } else  { //assume 16bpp
+                    int b = 10;
+                    int g = (i-100)/6;     // A little green
+                    int r = 31-(j-100)/16;    // A lot of red
+                    unsigned short int t = r<<11 | g << 5 | b;
+                    *((unsigned short int*)(fbp + location)) = t;
+                }
+            }
+        }
+    }
+}
