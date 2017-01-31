@@ -25,18 +25,36 @@ int isValid(int x, int y) {
 //print persegi
 void printRectangle(int height, int width, int x, int y) {
     long int location = 0;
+    long int location2 = 0;
+    long int location3 = 0;
     int i,j;
     for (j = y; j < y+height; j++) {
         for (i = x; i < x+width; i++) {
             if(isValid(i,j)) {
                 location = (i+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
                             (j+vinfo.yoffset) * finfo.line_length;
+                            
+                location2 = ((i-100)+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+                        (j+vinfo.yoffset) * finfo.line_length;
+                        
+                location3 = ((i+1)+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+                        (j+vinfo.yoffset) * finfo.line_length;
 
                 if (vinfo.bits_per_pixel == 32) {
                     *(fbp + location) = 100;        // Some blue
                     *(fbp + location + 1) = 15+(i-100)/2;     // A little green
                     *(fbp + location + 2) = 200-(j-100)/5;    // A lot of red
                     *(fbp + location + 3) = 0;      // No transparency
+                    
+                    *(fbp + location2) = 0;        // Some blue
+                    *(fbp + location2 + 1) = 0;     // A little green
+                    *(fbp + location2 + 2) = 0;    // A lot of red
+                    *(fbp + location2 + 3) = 0;
+                    
+                    *(fbp + location3) = 0;        // Some blue
+                    *(fbp + location3 + 1) = 0;     // A little green
+                    *(fbp + location3 + 2) = 0;    // A lot of red
+                    *(fbp + location3 + 3) = 0;  
                 } else  { //assume 16bpp
                     int b = 10;
                     int g = (i-100)/6;     // A little green
@@ -123,12 +141,14 @@ void printBackground() {
 
             location = (i+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
                         (j+vinfo.yoffset) * finfo.line_length;
+                        
 
             if (vinfo.bits_per_pixel == 32) {
                 *(fbp + location) = 0;        // Some blue
                 *(fbp + location + 1) = 0;     // A little green
                 *(fbp + location + 2) = 0;    // A lot of red
                 *(fbp + location + 3) = 0;      // No transparency
+                
             } else  { //assume 16bpp
                 int b = 0;
                 int g = 0;     // A little green
@@ -142,18 +162,27 @@ void printBackground() {
 
 void shoot(int x, int y) {
 	long int location = 0;
+	long int location2 = 0;
     int i,j;
     for (j = y; j < y+30; j++) {
         for (i = x; i < x+30; i++) {
             if(isValid(i,j)) {
                 location = (i+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
                             (j+vinfo.yoffset) * finfo.line_length;
+                location2 = (i+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+                            (j+30+vinfo.yoffset) * finfo.line_length;
+                         
 
                 if (vinfo.bits_per_pixel == 32) {
                     *(fbp + location) = 100;        // Some blue
                     *(fbp + location + 1) = 15+(i-100)/2;     // A little green
                     *(fbp + location + 2) = 200-(j-100)/5;    // A lot of red
                     *(fbp + location + 3) = 0;      // No transparency
+                    
+                    *(fbp + location2) = 0;        // Some blue
+                    *(fbp + location2 + 1) = 0;     // A little green
+                    *(fbp + location2 + 2) = 0;    // A lot of red
+                    *(fbp + location2 + 3) = 0;      // No transparency
                 } else  { //assume 16bpp
                     int b = 10;
                     int g = (i-100)/6;     // A little green
