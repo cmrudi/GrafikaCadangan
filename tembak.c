@@ -9,6 +9,9 @@
 #include <unistd.h>
 
 struct termios stdin_orig;  // Structure to save parameters
+int startXBomb = 0;
+int endXBomb = 0;
+int meetBomb = 0;
 
 void term_reset() {
         tcsetattr(STDIN_FILENO,TCSANOW,&stdin_orig);
@@ -26,11 +29,117 @@ void term_nonblocking() {
         atexit(term_reset);
 }
 
+void *plane(void *vargp) {
+	
+	int initX = (int)vargp;
+	int initY = 0;
+	initX = 0;
+	startXBomb = initX;
+	endXBomb = initX + 148;
+	int location = 0;
+	int width = 1366;
+	int height = 150;
 
+	char* A;
+	A = (char*)malloc(sizeof(char)*width*height);
+	while (initX < 1301) {
+		if (initX == 1300) {
+			initX = 0;
+		}
+		if (meetBomb == 1) {
+			initX = 0;
+			pthread_exit(NULL);
+		}
+		initX++;
+		startXBomb = initX;
+		endXBomb = initX + 148;
+		int i = 0;
+		for (i = 0; i < width*height; i++) {
+		  A[i] = 0;
+		}
+		
+		//Pesawat
+		int x1 = 2 +initX;
+		int y1 = 83;
+		int x2 = 148 +initX;
+		int y2 = 83;
+		int x3 = 117 +initX;
+		int y3 = 57;
+		int x4 = 37 +initX;
+		int y4 = 57;
+		int x5 = 8 +initX;
+		int y5 = 28;
+		int x9 = 2 + initX;
+		int y9 = 28;
+		
+		//Sayap
+		int x6 = 77 +initX;
+		int y6 = 76;
+		int x7 = 105 +initX;
+		int y7 = 76;
+		int x8 = 93 +initX;
+		int y8 = 116;
+		
+		plotLine(width, A, x1, y1, x2, y2);
+		plotLine(width, A, x2, y2, x3, y3);
+		plotLine(width, A, x3, y3, x4, y4);
+		plotLine(width, A, x4, y4, x5, y5);
+		plotLine(width, A, x5, y5, x9, y9);
+		plotLine(width, A, x9, y9, x1, y1);
+		
+		plotLine(width, A, x6, y6, x7, y7);
+		plotLine(width, A, x7, y7, x8, y8);
+		plotLine(width, A, x8, y8, x6, y6);
+		
+		
+			for (int y = height-1; y >= 0; y--) {
+			  for (int x = width-1; x >= 0; x--) {
+				  
+				 if (A[y*width+x] != 0) {
+					location = (x+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+							   (y+vinfo.yoffset) * finfo.line_length;
+					
+					if (vinfo.bits_per_pixel == 32) {
+						*(fbp + location) = 100;        // Some blue
+						*(fbp + location + 1) = 15+(x-100)/2;     // A little green
+						*(fbp + location + 2) = 200-(y-100)/5;    // A lot of red
+						*(fbp + location + 3) = 0;      // No transparency
+				//location += 4;
+					} else  { //assume 16bpp
+						int b = 10;
+						int g = (x-100)/6;     // A little green
+						int r = 31-(y-100)/16;    // A lot of red
+						unsigned short int t = r<<11 | g << 5 | b;
+						*((unsigned short int*)(fbp + location)) = t;
+					}
+				 }
+				 else {
+					 location = (x+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+							   (y+vinfo.yoffset) * finfo.line_length;
+					  if (vinfo.bits_per_pixel == 32) {
+						*(fbp + location) = 0;        // Some blue
+						*(fbp + location + 1) = 0;     // A little green
+						*(fbp + location + 2) = 0;    // A lot of red
+						*(fbp + location + 3) = 0;      // No transparency
+				//location += 4;
+					} else  { //assume 16bpp
+						int b = 10;
+						int g = (x-100)/6;     // A little green
+						int r = 31-(y-100)/16;    // A lot of red
+						unsigned short int t = r<<11 | g << 5 | b;
+						*((unsigned short int*)(fbp + location)) = t;
+					}
+				 }
+			  }
+			}
+		}
+	
+}
 
 void *explodeThread (void *vargp) {
 	int initX = (int)vargp;
 	int initY = 0;
+	pthread_t tid;
 	int location = 0;
 	int width = 1366;
 	int height = 400;
@@ -110,8 +219,13 @@ void *explodeThread (void *vargp) {
 	}
 	sleep(1);
 	printBackground();
+	pthread_create(&tid, NULL, plane, (void *)0);
+	
+	pthread_exit(NULL);
 	
 }
+
+
 
 void *shootThread(void *vargp)
 {
@@ -123,11 +237,15 @@ void *shootThread(void *vargp)
 		shoot(initX,initY);
 		initY--;
 		
-		if (initY == 0) {
+		if ((initY == 83)&&(initX > startXBomb)&&(initX < endXBomb)) {
+			meetBomb = 1;
+			usleep(500);
 			pthread_create(&tid, NULL, explodeThread, (void *)initX);
+			usleep(500);
+			printBackground();
 		}
 	}
-    return NULL;
+	pthread_exit(NULL);
 }
 
 
@@ -181,6 +299,9 @@ int main(int argc, char **argv) {
 	int increase = 1;
 	pthread_t tid;
 	printBackground();
+	
+	pthread_create(&tid, NULL, plane, (void *)i);
+	
     while (key != 10) {
 		key = 0;
 		printRectangle(75,100,i,668);
